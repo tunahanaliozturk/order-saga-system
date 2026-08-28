@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/load/">
+    <Project Path="load/OrderSaga.LoadTests/OrderSaga.LoadTests.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/OrderSaga.AppHost/OrderSaga.AppHost.csproj" />
+    <Project Path="src/OrderSaga.BuildingBlocks/OrderSaga.BuildingBlocks.csproj" />
+    <Project Path="src/OrderSaga.Contracts/OrderSaga.Contracts.csproj" />
+    <Project Path="src/OrderSaga.InventoryService/OrderSaga.InventoryService.csproj" />
+    <Project Path="src/OrderSaga.OrderService/OrderSaga.OrderService.csproj" />
+    <Project Path="src/OrderSaga.PaymentService/OrderSaga.PaymentService.csproj" />
+    <Project Path="src/OrderSaga.ServiceDefaults/OrderSaga.ServiceDefaults.csproj" />
+    <Project Path="src/OrderSaga.ShippingService/OrderSaga.ShippingService.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OrderSaga.IntegrationTests/OrderSaga.IntegrationTests.csproj" />
+    <Project Path="tests/OrderSaga.UnitTests/OrderSaga.UnitTests.csproj" />
+  </Folder>
+</Solution>
