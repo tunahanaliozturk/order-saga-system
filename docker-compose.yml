@@ -1,0 +1,102 @@
+name: order-saga-system
+
+# The demo. `docker compose up --build` brings up one Postgres with four databases, RabbitMQ with its
+# management UI, and all four services. Every fault dial starts at zero; the README shows how to turn one
+# on and watch the compensations run.
+
+x-service-env: &service-env
+  ConnectionStrings__rabbitmq: amqp://saga:saga@rabbitmq:5672/
+  OrderSaga__MigrateOnStartup: "true"
+  ASPNETCORE_HTTP_PORTS: "8080"
+  DOTNET_ENVIRONMENT: Development
+
+x-service-deps: &service-deps
+  postgres:
+    condition: service_healthy
+  rabbitmq:
+    condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: saga
+      POSTGRES_PASSWORD: saga
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      # PostgreSQL 18 stores data under a major-version directory, so the volume mounts one level up from
+      # where it did on 17 and earlier.
+      - postgres-data:/var/lib/postgresql
+      - ./deploy/create-databases.sql:/docker-entrypoint-initdb.d/10-create-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saga"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: saga
+      RABBITMQ_DEFAULT_PASS: saga
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+
+  order-service:
+    build:
+      context: .
+      args:
+        PROJECT: OrderSaga.OrderService
+    environment:
+      <<: *service-env
+      ConnectionStrings__orderdb: Host=postgres;Database=orderdb;Username=saga;Password=saga
+    ports:
+      - "5000:8080"
+    depends_on: *service-deps
+
+  payment-service:
+    build:
+      context: .
+      args:
+        PROJECT: OrderSaga.PaymentService
+    environment:
+      <<: *service-env
+      ConnectionStrings__paymentdb: Host=postgres;Database=paymentdb;Username=saga;Password=saga
+    ports:
+      - "5001:8080"
+    depends_on: *service-deps
+
+  inventory-service:
+    build:
+      context: .
+      args:
+        PROJECT: OrderSaga.InventoryService
+    environment:
+      <<: *service-env
+      ConnectionStrings__inventorydb: Host=postgres;Database=inventorydb;Username=saga;Password=saga
+    ports:
+      - "5002:8080"
+    depends_on: *service-deps
+
+  shipping-service:
+    build:
+      context: .
+      args:
+        PROJECT: OrderSaga.ShippingService
+    environment:
+      <<: *service-env
+      ConnectionStrings__shippingdb: Host=postgres;Database=shippingdb;Username=saga;Password=saga
+    ports:
+      - "5003:8080"
+    depends_on: *service-deps
+
+volumes:
+  postgres-data:
