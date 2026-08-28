@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.5.3" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+
+    <!--
+      The Aspire CLI bundle is fetched at build time. Requiring it would make a plain `dotnet build` of
+      this repository depend on a network round trip, so the host uses the packaged dashboard and DCP.
+    -->
+    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+    <UserSecretsId>order-saga-apphost</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../OrderSaga.InventoryService/OrderSaga.InventoryService.csproj" />
+    <ProjectReference Include="../OrderSaga.OrderService/OrderSaga.OrderService.csproj" />
+    <ProjectReference Include="../OrderSaga.PaymentService/OrderSaga.PaymentService.csproj" />
+    <ProjectReference Include="../OrderSaga.ShippingService/OrderSaga.ShippingService.csproj" />
+  </ItemGroup>
+
+</Project>
