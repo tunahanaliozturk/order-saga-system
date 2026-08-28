@@ -29,9 +29,16 @@ RUN dotnet publish "src/${PROJECT}/${PROJECT}.csproj" \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
 WORKDIR /app
 
+# curl is here for the container health check, which asks /health/ready and therefore proves the database
+# is reachable and migrated. A TCP probe would go green the moment the port opens, which is before this
+# service can actually do anything.
+RUN apt-get update     && apt-get install --yes --no-install-recommends curl     && rm --recursive --force /var/lib/apt/lists/*
+
 # Nothing here writes to its own filesystem or needs root.
 RUN useradd --uid 64198 --create-home --shell /usr/sbin/nologin ordersaga
 USER 64198
+
+HEALTHCHECK --interval=5s --timeout=3s --start-period=60s --retries=20     CMD curl --fail --silent http://localhost:8080/health/ready || exit 1
 
 COPY --from=build /app .
 

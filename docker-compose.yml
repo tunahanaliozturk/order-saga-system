@@ -16,6 +16,14 @@ x-service-deps: &service-deps
   rabbitmq:
     condition: service_healthy
 
+# The health check lives in the image, so `docker compose up --wait` waits for a service that can answer
+# rather than one whose port happens to be open.
+x-service-health: &service-health
+  interval: 5s
+  timeout: 3s
+  retries: 40
+  start_period: 90s
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -61,6 +69,7 @@ services:
     ports:
       - "5000:8080"
     depends_on: *service-deps
+    healthcheck: *service-health
 
   payment-service:
     build:
@@ -73,6 +82,7 @@ services:
     ports:
       - "5001:8080"
     depends_on: *service-deps
+    healthcheck: *service-health
 
   inventory-service:
     build:
@@ -85,6 +95,7 @@ services:
     ports:
       - "5002:8080"
     depends_on: *service-deps
+    healthcheck: *service-health
 
   shipping-service:
     build:
@@ -97,6 +108,7 @@ services:
     ports:
       - "5003:8080"
     depends_on: *service-deps
+    healthcheck: *service-health
 
 volumes:
   postgres-data:
