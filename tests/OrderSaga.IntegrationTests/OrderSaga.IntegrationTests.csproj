@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Every test starts four service hosts against shared containers. Running two of those at once turns
+      resource contention into failures that read like saga bugs, so the suite is deliberately serial.
+    -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/OrderSaga.InventoryService/OrderSaga.InventoryService.csproj" />
+    <ProjectReference Include="../../src/OrderSaga.OrderService/OrderSaga.OrderService.csproj" />
+    <ProjectReference Include="../../src/OrderSaga.PaymentService/OrderSaga.PaymentService.csproj" />
+    <ProjectReference Include="../../src/OrderSaga.ShippingService/OrderSaga.ShippingService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.RabbitMq" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+</Project>
