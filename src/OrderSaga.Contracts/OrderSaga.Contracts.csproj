@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      No package references on purpose. Message contracts are the one thing every service and every
+      external consumer has to agree on, so they must not drag a broker client or an ORM along with them.
+    -->
+  </PropertyGroup>
+
+</Project>
