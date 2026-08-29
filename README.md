@@ -305,6 +305,37 @@ API call is a local database write and says nothing about how long the saga took
 dotnet run --project load/OrderSaga.LoadTests -- http://localhost:5000 150 300
 ```
 
+It is written by hand and has no package references. It fires requests on a fixed schedule rather than
+waiting for each response, because a closed loop measures the system at whatever rate it happens to allow,
+which is the load test telling you what you already knew.
+
+## Dependency licences
+
+Every package in the tree, at every depth, is permissively licensed, and the build checks rather than
+assumes:
+
+```bash
+dotnet run --project tools/OrderSaga.LicenseAudit -- .
+```
+
+```
+Checking 160 packages against 12 allowed licences.
+
+   116  MIT
+    36  Apache-2.0
+     3  BSD-3-Clause
+     3  PostgreSQL
+     1  BSD (file)
+     1  Apache-2.0 OR MPL-2.0
+
+All 160 packages are permissively licensed.
+```
+
+This runs in CI. It exists because two dependencies here were not permissive and neither was visible from a
+package list: NBomber shipped a paid commercial subscription agreement, and JsonPatch.Net, three levels
+below Aspire, shipped a maintenance-fee agreement asking revenue-generating users for a monthly payment.
+Both were replaced. Reasoning in [ADR 6](docs/adr/0006-permissive-dependencies-only.md).
+
 ## What this does not do
 
 Worth being explicit, because a project claiming no limitations is not being honest about any:
@@ -327,14 +358,15 @@ Worth being explicit, because a project claiming no limitations is not being hon
 - [3. Idempotency is a unique constraint, not application code](docs/adr/0003-idempotency-in-the-database.md)
 - [4. Both coordination strategies, on the same services](docs/adr/0004-both-saga-styles.md)
 - [5. One order at a time, all orders in parallel](docs/adr/0005-ordering-per-correlation-id.md)
+- [6. Permissive dependencies only, checked by the build](docs/adr/0006-permissive-dependencies-only.md)
 
 Operational guide: [docs/runbook.md](docs/runbook.md).
 
 ## Built with
 
 .NET 10, C# 14, ASP.NET Core minimal APIs, MassTransit 8.5 over RabbitMQ, EF Core 10 on PostgreSQL 18,
-OpenTelemetry, .NET Aspire for local orchestration, xUnit v3 and Testcontainers for the tests, NBomber for
-load.
+OpenTelemetry, .NET Aspire for local orchestration, xUnit v3 and Testcontainers for the tests. The load
+harness and the licence audit are hand-written and depend on nothing.
 
 ## License
 

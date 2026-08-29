@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    No package references, and no project references either. A tool that audits the dependency tree must
+    not be part of the dependency tree it audits.
+  -->
+
+</Project>

@@ -35,6 +35,12 @@ jobs:
       - name: Verify formatting
         run: dotnet format --verify-no-changes --no-restore
 
+      # Reads the licence terms of every package in the tree, at every depth, from the restored packages
+      # on disk. A dependency that carries a commercial subscription or a maintenance fee fails the build
+      # instead of arriving quietly.
+      - name: Audit dependency licences
+        run: dotnet run --project tools/OrderSaga.LicenseAudit --configuration Release --no-build -- .
+
       # The state machine runs on an in-memory bus, so every transition and every compensation path is
       # covered in a couple of seconds without Docker.
       - name: Saga state machine tests

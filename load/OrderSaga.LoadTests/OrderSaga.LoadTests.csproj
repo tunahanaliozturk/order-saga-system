@@ -5,9 +5,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NBomber" />
-  </ItemGroup>
+  <!--
+    No package references. The load generator is an open-model request loop and a percentile function,
+    which is less code than evaluating a library's licence would be worth. See docs/adr/0006.
+  -->
 
   <ItemGroup>
     <ProjectReference Include="../../src/OrderSaga.Contracts/OrderSaga.Contracts.csproj" />
