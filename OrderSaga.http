@@ -1,0 +1,140 @@
+# Manual exploration. Works in VS Code (REST Client), Visual Studio and Rider.
+# Start the stack first: docker compose up --build
+
+@order = http://localhost:5000
+@payment = http://localhost:5001
+@inventory = http://localhost:5002
+@shipping = http://localhost:5003
+
+### An orchestrated order. A central state machine tells each service what to do next.
+# @name orchestrated
+POST {{order}}/orders
+Content-Type: application/json
+
+{
+  "customerId": "8f14e45f-ceea-467a-9f0b-2c1d0f4b1a01",
+  "lines": [
+    { "sku": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "quantity": 2, "unitPrice": 19.99 }
+  ]
+}
+
+###
+@orchestratedId = {{orchestrated.response.body.id}}
+
+### Where it got to, and which strategy handled it.
+GET {{order}}/orders/{{orchestratedId}}
+
+### The whole story, from every service, in one place. This is the artefact worth looking at.
+GET {{order}}/orders/{{orchestratedId}}/timeline
+
+### The same flow through choreography. No orchestrator: each service reacts to the previous event.
+# @name choreographed
+POST {{order}}/orders/choreographed
+Content-Type: application/json
+
+{
+  "customerId": "8f14e45f-ceea-467a-9f0b-2c1d0f4b1a01",
+  "lines": [
+    { "sku": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "quantity": 2, "unitPrice": 19.99 }
+  ]
+}
+
+###
+@choreographedId = {{choreographed.response.body.id}}
+
+### Compare this timeline with the orchestrated one. Same shape, same terminal state.
+GET {{order}}/orders/{{choreographedId}}/timeline
+
+# ------------------------------------------------------------------------------------------------
+# Compensation. Make every shipment fail; by then payment and inventory have both committed.
+# mode 0 is a business decline, 1 a timeout, 2 a dropped connection.
+# ------------------------------------------------------------------------------------------------
+
+### Break shipping.
+POST {{shipping}}/test/shipping/fault-rate
+Content-Type: application/json
+
+{ "rate": 1.0, "mode": 0 }
+
+### Place an order that will get as far as shipping and then unwind.
+# @name doomed
+POST {{order}}/orders
+Content-Type: application/json
+
+{
+  "customerId": "8f14e45f-ceea-467a-9f0b-2c1d0f4b1a01",
+  "lines": [
+    { "sku": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "quantity": 1, "unitPrice": 49.00 }
+  ]
+}
+
+###
+@doomedId = {{doomed.response.body.id}}
+
+### Both committed steps come back: InventoryReleased and PaymentRefunded, after ShipmentFailed.
+GET {{order}}/orders/{{doomedId}}/timeline
+
+### The effects are real, not just events. The payment is refunded.
+GET {{payment}}/payments/{{doomedId}}
+
+### The reservation is released.
+GET {{inventory}}/inventory/reservations/{{doomedId}}
+
+### Turn shipping back on.
+POST {{shipping}}/test/shipping/fault-rate
+Content-Type: application/json
+
+{ "rate": 0.0, "mode": 0 }
+
+# ------------------------------------------------------------------------------------------------
+# Out of stock: payment commits and is then refunded, and nothing is reserved.
+# ------------------------------------------------------------------------------------------------
+
+### Set a product to zero.
+PUT {{inventory}}/inventory/stock/11111111-1111-1111-1111-111111111111
+Content-Type: application/json
+
+{ "quantity": 0 }
+
+### Order it anyway.
+POST {{order}}/orders
+Content-Type: application/json
+
+{
+  "customerId": "8f14e45f-ceea-467a-9f0b-2c1d0f4b1a01",
+  "lines": [
+    { "sku": "11111111-1111-1111-1111-111111111111", "quantity": 5, "unitPrice": 10.00 }
+  ]
+}
+
+# ------------------------------------------------------------------------------------------------
+# Operator actions
+# ------------------------------------------------------------------------------------------------
+
+### Anything non-terminal past its timeout. Empty is the healthy answer.
+GET {{order}}/orders/stuck
+
+### Re-drive whichever step an order is waiting on. Safe because every consumer is idempotent.
+POST {{order}}/orders/{{orchestratedId}}/retry
+
+### Unwind a completed order. The only path that cancels a shipment, and orchestration only.
+POST {{order}}/orders/{{orchestratedId}}/cancel
+Content-Type: application/json
+
+{ "reason": "Customer changed their mind" }
+
+# ------------------------------------------------------------------------------------------------
+# Health and contracts
+# ------------------------------------------------------------------------------------------------
+
+### Readiness gates on the database and the broker.
+GET {{order}}/health/ready
+
+### Liveness checks no dependency on purpose.
+GET {{order}}/health/live
+
+###
+GET {{order}}/openapi/v1.json
+
+###
+GET {{payment}}/openapi/v1.json

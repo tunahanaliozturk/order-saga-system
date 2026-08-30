@@ -309,6 +309,13 @@ It is written by hand and has no package references. It fires requests on a fixe
 waiting for each response, because a closed loop measures the system at whatever rate it happens to allow,
 which is the load test telling you what you already knew.
 
+## Running it
+
+[`docs/runbook.md`](docs/runbook.md) covers what a stuck order means, how to read a timeline, when to retry
+rather than cancel, and the retention coupling between the outbox and the idempotency ledger.
+[`OrderSaga.http`](OrderSaga.http) walks both flows by hand, including driving shipping to total failure and
+watching both committed steps come back.
+
 ## Dependency licences
 
 Every package in the tree, at every depth, is permissively licensed, and the build checks rather than
